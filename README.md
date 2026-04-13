@@ -5,20 +5,24 @@
 ![Groq](https://img.shields.io/badge/API-Groq-orange)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-VOXEN is a voice-controlled AI agent that listens to your voice,
-understands your intent, and executes real actions on your local
-machine — all through a clean, modern UI.
+VOXEN is a voice-controlled AI agent I built for the Mem0 internship
+assignment. You talk to it — either by uploading an audio file or
+recording live — and it figures out what you want and actually does it.
+Write code, create files, summarize text, or just have a conversation.
+The whole pipeline runs through a Streamlit UI that shows you every
+step of what happened.
 
 ---
 
 ## Demo
 
-> Upload an audio file or record your voice → VOXEN transcribes it,
-> detects your intent, and executes the action automatically.
+Upload an audio file or hit record → VOXEN transcribes what you said,
+detects your intent, and executes the action. Results show up instantly
+in the UI along with the full session log.
 
 ---
 
-## System Architecture
+## How it works
 
 Audio Input (Upload / Microphone)
 ↓
@@ -36,34 +40,34 @@ VOXEN Streamlit UI (displays results)
 
 ---
 
-## Supported Intents
+## What it can do
 
-| Intent | What it does |
+| Intent | What happens |
 |---|---|
-| Write Code | Generates code and saves it to output/ folder |
-| Create File | Creates a new file or folder in output/ |
-| Summarize | Summarizes the provided text |
-| General Chat | Answers questions conversationally |
+| Write Code | Generates code and saves it directly to the output/ folder |
+| Create File | Creates a new file or folder inside output/ |
+| Summarize | Reads the text and gives you a clean summary |
+| General Chat | Answers your question conversationally |
 
 ---
 
 ## Project Structure
 
 voice-agent/
-├── app.py            # Streamlit UI — main entry point
-├── stt.py            # Speech-to-Text module
-├── intent.py         # Intent Detection module
-├── tools.py          # Tool Execution module
-├── config.py         # API keys and settings (not pushed to GitHub)
-├── output/           # All generated files are saved here
-├── requirements.txt  # Python dependencies
+├── app.py            # Streamlit UI — start here
+├── stt.py            # Handles audio transcription
+├── intent.py         # Classifies what the user wants
+├── tools.py          # Does the actual work based on intent
+├── config.py         # Your API keys — not pushed to GitHub
+├── output/           # Everything generated goes here
+├── requirements.txt  # Dependencies
 └── README.md
 
 ---
 
-## Setup Instructions
+## Getting it running
 
-### 1. Clone the repository
+### 1. Clone the repo
 ```bash
 git clone https://github.com/adhilaashraf/voice-agent.git
 cd voice-agent
@@ -74,8 +78,8 @@ cd voice-agent
 pip install streamlit groq scipy numpy python-dotenv streamlit-audiorecorder
 ```
 
-### 3. Create config.py and add your Groq API key
-Create a file called `config.py` in the root folder:
+### 3. Set up your API key
+Create a `config.py` file in the root folder and add this:
 ```python
 GROQ_API_KEY = "your_groq_api_key_here"
 WHISPER_MODEL = "whisper-large-v3"
@@ -83,20 +87,19 @@ LLM_MODEL = "llama-3.3-70b-versatile"
 OUTPUT_FOLDER = "output"
 ```
 
-> Get your free Groq API key at https://console.groq.com
+You can get a free Groq API key at https://console.groq.com — no
+credit card needed.
 
-### 4. Run the app
+### 4. Run it
 ```bash
 streamlit run app.py
 ```
 
-### 5. Open in browser
-
 ---
 
-## Models Used
+## Models used
 
-| Task | Model | Provider |
+| Task | Model | Where |
 |---|---|---|
 | Speech-to-Text | whisper-large-v3 | Groq API |
 | Intent Detection | llama-3.3-70b-versatile | Groq API |
@@ -105,84 +108,69 @@ streamlit run app.py
 
 ---
 
-## Hardware Workaround — Why Groq API instead of Local HuggingFace Whisper?
+## Why I used Groq instead of running Whisper locally
 
-The assignment recommends using a HuggingFace model such as Whisper
-or wav2vec locally. However, this project uses the **Groq API** for
-both Speech-to-Text and LLM inference. Here is the detailed reason:
+The assignment suggests running a HuggingFace Whisper model locally,
+and I did try that first. It didn't work out, and here's exactly why.
 
-### Machine Specifications
+**My machine specs:**
 - RAM: 8GB
 - GPU: None (integrated graphics only)
 - OS: Windows 11
 
-### Why local Whisper failed on this machine
+**What went wrong with local Whisper:**
 
-**1. Memory Issue**
-Whisper models require significant RAM to load. The smallest Whisper
-model (whisper-tiny) needs around 1GB of RAM just to load, while
-whisper-base needs 1.5GB and whisper-large needs over 6GB. On an
-8GB RAM machine running Windows, other system processes consume
-around 4-5GB, leaving insufficient memory for the model to run
-without crashing.
+Memory was the first problem. Even whisper-tiny needs around 1GB just
+to load, and whisper-large needs over 6GB. On a Windows machine with
+8GB total, the OS and background processes already eat through 4-5GB
+before you even start. The model kept crashing on load.
 
-**2. Speed Issue**
-Without a dedicated GPU, Whisper runs on CPU only. Transcribing
-even a 5-second audio clip takes 30-90 seconds on CPU. This makes
-the user experience completely unusable for a real-time voice agent.
+Speed was the second problem. Running Whisper on CPU without a GPU
+means transcribing a 5-second audio clip takes somewhere between 30
+and 90 seconds. That's not a voice agent anymore, that's just waiting.
 
-**3. Dependency Conflicts**
-Installing HuggingFace transformers, torch, and torchaudio on
-Windows without a GPU requires the CPU-only version of PyTorch
-which is over 800MB in size. This caused multiple dependency
-conflicts during installation on this machine.
+The third issue was the dependency stack. Getting HuggingFace
+transformers, torch, and torchaudio installed on Windows without a
+GPU means pulling the CPU-only PyTorch build, which is 800MB+ and
+caused several conflicts with other packages during setup.
 
-### Why Groq API is the right solution
+**Why Groq works:**
 
-**1. Same Whisper Model**
-Groq API runs the exact same whisper-large-v3 model — the most
-accurate version of Whisper. The transcription quality is identical
-or better than running it locally.
+Groq runs the exact same whisper-large-v3 model — the most accurate
+version — on their LPU hardware. That same 5-second clip gets
+transcribed in under a second. The quality is at least as good as
+local, the speed is dramatically better, and there's a free tier
+that doesn't even ask for a credit card.
 
-**2. Extremely Fast**
-Groq's LPU (Language Processing Unit) hardware processes audio and
-text at speeds that are 10-100x faster than running on CPU locally.
-A 5-second audio clip is transcribed in under 1 second.
-
-**3. Free Tier Available**
-Groq provides a generous free tier with no credit card required,
-making it accessible for development and demonstration purposes.
-
-**4. Assignment Explicitly Allows It**
-The assignment states — "If your local machine cannot run this model
-efficiently, you may use an API-based STT service like Groq or
-OpenAI. If you choose this route, please document why in your README."
-This section serves as that documentation.
+The assignment also explicitly says — *"If your local machine cannot
+run this model efficiently, you may use an API-based STT service like
+Groq or OpenAI. If you choose this route, please document why in your
+README."* — so this section is that documentation.
 
 ---
 
-## Safety
+## A note on safety
 
-All file creation and code writing is strictly restricted to the
-`output/` folder inside the project directory. The system will never
-create, modify, or delete files outside this folder, preventing any
-accidental system modifications.
-
----
-
-## Features
-
-- Two audio input methods — file upload and microphone recording
-- Accurate speech-to-text using Whisper Large V3
-- Smart intent classification using Llama 3.3 70B
-- Automatic code generation and file saving
-- Session history log with success/failure tracking
-- Clean dark UI with animated visuals
-- Graceful error handling for all edge cases
+Every file and piece of code this agent generates goes strictly into
+the `output/` folder. It will not touch anything outside that
+directory. I hardcoded that restriction in `tools.py` so there's no
+way it accidentally writes somewhere it shouldn't.
 
 ---
 
-## Tech Stack
+## Everything else it does
+
+- Upload audio files or record directly from the mic
+- Transcribes using Whisper Large V3 (accurate even with background noise)
+- Classifies intent with Llama 3.3 70B
+- Generates working code and saves it automatically
+- Keeps a session log with success/failure status for every request
+- Handles errors without crashing — mic not available, bad audio,
+  unrecognized intent — all caught and shown cleanly in the UI
+
+---
+
+## Tech stack
 
 - **Frontend** — Streamlit with custom HTML/CSS
 - **Speech-to-Text** — Groq Whisper API
@@ -195,10 +183,10 @@ accidental system modifications.
 ## Author
 
 **Athila Ashraf**
-Built for Mem0 AI/ML & Generative AI Developer Intern Assignment
+Built for the Mem0 AI/ML & Generative AI Developer Intern Assignment.
 
 ---
 
 ## License
 
-MIT License — feel free to use and modify this project.
+MIT — use it, modify it, do whatever you want with it.
