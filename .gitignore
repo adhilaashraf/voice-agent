@@ -3,3 +3,9 @@ __pycache__/
 *.pyc
 temp_audio.wav
 static/
+*.jpg
+*.jpeg
+*.png
+*.mp3
+*.wav
+*.ogg
