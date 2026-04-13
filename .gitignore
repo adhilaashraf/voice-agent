@@ -1,0 +1,5 @@
+config.py
+__pycache__/
+*.pyc
+temp_audio.wav
+static/
